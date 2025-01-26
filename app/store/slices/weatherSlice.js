@@ -20,6 +20,7 @@ const weatherSlice = createSlice({
     loading: false,
     data: {},
     error: "",
+    cityName: "",
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -31,11 +32,13 @@ const weatherSlice = createSlice({
         state.loading = false;
         state.data = action.payload;
         state.error = "";
+        state.cityName = action.payload.city.name;
       })
       .addCase(fetchWeather.rejected, (state, action) => {
         state.loading = false;
         state.data = {};
         state.error = action.error.message;
+        state.cityName = "";
       });
   },
 });
