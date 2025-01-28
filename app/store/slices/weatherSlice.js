@@ -12,7 +12,14 @@ export const fetchWeather = createAsyncThunk(
         `${BASE_URL}?q=${city}&units=imperial&appid=${API_KEY}`
       );
       console.log("Weather API Response:", response.data);
-      return response.data;
+
+      const cityName = response.data.city.name;
+      const country = response.data.city.country;
+
+      return {
+        weatherData: response.data,
+        cityName: `${cityName}, ${country}`,
+      };
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -40,7 +47,26 @@ export const fetchWeatherByZip = createAsyncThunk(
       );
 
       // Return both the weather data and the city information
-      return { weatherData: weatherResponse.data, city: `${city}, ${country}` };
+      return { weatherData: weatherResponse.data, city, country };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const fetchWeatherByCity = createAsyncThunk(
+  "weather/fetchWeatherByCity",
+  async (city, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}?q=${city}&units=imperial&appid=${API_KEY}`
+      );
+      const cityName = response.data.city.name; // Adjust based on actual response structure
+      const country = response.data.city.country; // Adjust based on actual response structure
+      return {
+        weatherData: response.data,
+        cityName: `${cityName}, ${country}`,
+      };
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -67,8 +93,9 @@ const weatherSlice = createSlice({
       })
       .addCase(fetchWeather.fulfilled, (state, action) => {
         state.loading = false;
-        state.data = action.payload;
+        state.data = action.payload.weatherData;
         state.error = "";
+        state.cityName = action.payload.cityName;
       })
       .addCase(fetchWeather.rejected, (state, action) => {
         state.loading = false;
@@ -85,6 +112,20 @@ const weatherSlice = createSlice({
         state.cityName = action.payload.city;
       })
       .addCase(fetchWeatherByZip.rejected, (state, action) => {
+        state.loading = false;
+        state.data = {};
+        state.error = action.payload;
+      })
+      .addCase(fetchWeatherByCity.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchWeatherByCity.fulfilled, (state, action) => {
+        state.loading = false;
+        state.data = action.payload.weatherData;
+        state.error = "";
+        state.cityName = action.payload.cityName;
+      })
+      .addCase(fetchWeatherByCity.rejected, (state, action) => {
         state.loading = false;
         state.data = {};
         state.error = action.payload;
