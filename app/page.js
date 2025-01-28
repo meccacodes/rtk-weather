@@ -20,7 +20,11 @@ const Home = () => {
     try {
       const response = await axios.get("https://ipapi.co/json/");
       const userCity = response.data.city;
-      setCityName(userCity);
+      const userState = response.data.region;
+      const userCountry = response.data.country;
+      setCityName(
+        `${userCity}, ${userState ? userState + ", " : ""}${userCountry}`
+      );
       dispatch(fetchWeather(userCity));
     } catch (error) {
       console.error("Error fetching user location", error);
