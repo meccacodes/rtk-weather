@@ -83,7 +83,9 @@ const Home = () => {
       <div>
         <h3>Showing data for {reduxCityName}</h3>
         <h3>Temperature</h3>
-        <Sparklines data={data.main ? data.main.temp : []}>
+        <Sparklines
+          data={data.list ? data.list.map((item) => item.main.temp) : []}
+        >
           <SparklinesLine color="blue" />
           <SparklinesReferenceLine type="mean" />
         </Sparklines>

@@ -8,9 +8,10 @@ export const fetchWeather = createAsyncThunk(
   "weather/fetchWeather",
   async (city, { rejectWithValue }) => {
     try {
-      const url = `${BASE_URL}?q=${city}&units=imperial&appid=${API_KEY}`;
-      console.log("Fetching weather data from:", url);
-      const response = await axios.get(url);
+      const response = await axios.get(
+        `${BASE_URL}?q=${city}&units=imperial&appid=${API_KEY}`
+      );
+      console.log("Weather API Response:", response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.message);
