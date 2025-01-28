@@ -45,9 +45,13 @@ const Home = () => {
 
   const handleSearch = async () => {
     try {
-      dispatch(fetchWeatherByZip(city));
+      // Replace spaces with commas and trim the input
+      const formattedCity = city.trim().replace(/\s+/g, ",");
+
+      // Dispatch the fetchWeather action with the formatted city
+      dispatch(fetchWeather(formattedCity));
     } catch (error) {
-      console.error("Error fetching location from zip code", error);
+      console.error("Error fetching location from city input", error);
     }
   };
 
