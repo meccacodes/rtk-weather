@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchWeather } from "./store/slices/weatherSlice";
+import { fetchWeather, fetchWeatherByZip } from "./store/slices/weatherSlice";
 import styles from "./page.module.css";
 import axios from "axios";
 import {
@@ -14,7 +14,12 @@ const Home = () => {
   const [city, setCity] = useState("");
   const [cityName, setCityName] = useState("");
   const dispatch = useDispatch();
-  const { loading, data, error } = useSelector((state) => state.weather);
+  const {
+    loading,
+    data,
+    error,
+    cityName: reduxCityName,
+  } = useSelector((state) => state.weather);
 
   const getUserLocation = async () => {
     try {
@@ -22,10 +27,13 @@ const Home = () => {
       const userCity = response.data.city;
       const userState = response.data.region;
       const userCountry = response.data.country;
-      setCityName(
-        `${userCity}, ${userState ? userState + ", " : ""}${userCountry}`
-      );
+      const fullCityName = `${userCity}, ${
+        userState ? userState + ", " : ""
+      }${userCountry}`;
+
       dispatch(fetchWeather(userCity));
+
+      dispatch({ type: "weather/setCityName", payload: fullCityName });
     } catch (error) {
       console.error("Error fetching user location", error);
     }
@@ -35,9 +43,12 @@ const Home = () => {
     getUserLocation();
   }, []);
 
-  const handleSearch = () => {
-    dispatch(fetchWeather(city));
-    setCityName(city);
+  const handleSearch = async () => {
+    try {
+      dispatch(fetchWeatherByZip(city));
+    } catch (error) {
+      console.error("Error fetching location from zip code", error);
+    }
   };
 
   const handleKeyPress = (event) => {
@@ -66,9 +77,9 @@ const Home = () => {
       {loading && <p>Loading...</p>}
       {error && <p>Error: {error}</p>}
       <div>
-        <h3>Showing data for {cityName}</h3>
+        <h3>Showing data for {reduxCityName}</h3>
         <h3>Temperature</h3>
-        <Sparklines data={getChartData("temp")}>
+        <Sparklines data={data.main ? data.main.temp : []}>
           <SparklinesLine color="blue" />
           <SparklinesReferenceLine type="mean" />
         </Sparklines>
