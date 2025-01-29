@@ -1,7 +1,11 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchWeather, fetchWeatherByZip } from "./store/slices/weatherSlice";
+import {
+  fetchWeather,
+  fetchWeatherByZip,
+  fetchWeatherByCity,
+} from "./store/slices/weatherSlice";
 import styles from "./page.module.css";
 import axios from "axios";
 import {
@@ -32,7 +36,6 @@ const Home = () => {
       }${userCountry}`;
 
       dispatch(fetchWeather(userCity));
-
       dispatch({ type: "weather/setCityName", payload: fullCityName });
     } catch (error) {
       console.error("Error fetching user location", error);
@@ -45,13 +48,19 @@ const Home = () => {
 
   const handleSearch = async () => {
     try {
-      // Replace spaces with commas and trim the input
-      const formattedCity = city.trim().replace(/\s+/g, ",");
+      const formattedInput = city.trim();
+      const isZipCode = /^\d{5}(-\d{4})?$/.test(formattedInput); // Check if input is a zip code
 
-      // Dispatch the fetchWeather action with the formatted city
-      dispatch(fetchWeather(formattedCity));
+      if (isZipCode) {
+        dispatch(fetchWeatherByZip(formattedInput)); // Fetch by zip code
+      } else {
+        const [inputCity, inputState] = formattedInput
+          .split(",")
+          .map((part) => part.trim());
+        dispatch(fetchWeatherByCity({ city: inputCity, state: inputState })); // Pass city and state as an object
+      }
     } catch (error) {
-      console.error("Error fetching location from city input", error);
+      console.error("Error fetching location from input", error);
     }
   };
 
