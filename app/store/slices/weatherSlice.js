@@ -75,16 +75,25 @@ export const fetchWeatherByCity = createAsyncThunk(
         throw new Error("Invalid city or state.");
       }
 
-      const { lat, lon, state: geoState, country } = geoResponse.data[0];
+      // Extract city name and state from the response
+      const {
+        name: geoCityName,
+        state: geoState,
+        country,
+      } = geoResponse.data[0];
 
       // Now fetch the weather data using the lat/lon
+      const { lat, lon } = geoResponse.data[0];
       const weatherResponse = await axios.get(
         `${BASE_URL}?lat=${lat}&lon=${lon}&units=imperial&appid=${API_KEY}`
       );
-
+      console.log(geoCityName);
+      console.log(geoState);
       return {
         weatherData: weatherResponse.data,
-        cityName: `${city}, ${geoState}, ${country}`, // Include state in the return
+        cityName: `${geoCityName}, ${geoState}`, // Include state in the return
+        geoCityName,
+        geoState,
       };
     } catch (error) {
       console.error("Error fetching weather by city:", error);
@@ -100,6 +109,8 @@ const weatherSlice = createSlice({
     data: {},
     error: "",
     cityName: "",
+    geoCityName: "",
+    geoState: "",
   },
   reducers: {
     setCityName: (state, action) => {
@@ -145,9 +156,9 @@ const weatherSlice = createSlice({
         state.loading = false;
         state.data = action.payload.weatherData;
         state.error = "";
-        state.cityName = `${action.payload.city}, ${
-          action.payload.state || ""
-        } ${action.payload.country}`.trim();
+        state.cityName = action.payload.cityName;
+        state.geoCityName = action.payload.geoCityName; // Store geoCityName
+        state.geoState = action.payload.geoState;
       })
       .addCase(fetchWeatherByCity.rejected, (state, action) => {
         state.loading = false;

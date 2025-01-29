@@ -1,3 +1,4 @@
+// app/page.js
 "use client";
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -16,14 +17,11 @@ import {
 
 const Home = () => {
   const [city, setCity] = useState("");
-  const [cityName, setCityName] = useState("");
   const dispatch = useDispatch();
-  const {
-    loading,
-    data,
-    error,
-    cityName: reduxCityName,
-  } = useSelector((state) => state.weather);
+  const { loading, data, error, cityName, geoCityName, geoState } = useSelector(
+    (state) => state.weather
+  );
+  console.log("Weather State:", { loading, data, error });
 
   const getUserLocation = async () => {
     try {
@@ -37,6 +35,16 @@ const Home = () => {
 
       dispatch(fetchWeather(userCity));
       dispatch({ type: "weather/setCityName", payload: fullCityName });
+
+      // Fetch geocoding data to set local city and state
+      const geoResponse = await axios.get(
+        `http://api.openweathermap.org/geo/1.0/direct?q=${userCity},${userState},US&appid=${API_KEY}`
+      );
+      if (geoResponse.data.length > 0) {
+        const geoData = geoResponse.data[0];
+        setLocalCityName(geoData.name); // Set local city name
+        setLocalStateName(geoData.state); // Set local state name
+      }
     } catch (error) {
       console.error("Error fetching user location", error);
     }
@@ -83,6 +91,7 @@ const Home = () => {
         value={city}
         onChange={(e) => setCity(e.target.value)}
         onKeyDown={handleKeyPress}
+        placeholder="Enter a city and state. ex:kingston, ny"
       />
       <button className={styles.searchBtn} onClick={handleSearch}>
         Search
@@ -90,7 +99,9 @@ const Home = () => {
       {loading && <p>Loading...</p>}
       {error && <p>Error: {error}</p>}
       <div>
-        <h3>Showing data for {reduxCityName}</h3>
+        <h3>
+          Showing data for {geoCityName}, {geoState}
+        </h3>
         <h3>Temperature</h3>
         <Sparklines
           data={data.list ? data.list.map((item) => item.main.temp) : []}
