@@ -15,10 +15,11 @@ export const fetchWeather = createAsyncThunk(
 
       const cityName = response.data.city.name;
       const country = response.data.city.country;
+      const zip = response.data.city.zip;
 
       return {
         weatherData: response.data,
-        cityName: `${cityName}, ${country}`,
+        cityName: `${cityName}, ${country}, ${zip}`,
       };
     } catch (error) {
       return rejectWithValue(error.message);
@@ -33,21 +34,39 @@ export const fetchWeatherByZip = createAsyncThunk(
       const geoResponse = await axios.get(
         `http://api.openweathermap.org/geo/1.0/zip?zip=${zip},us&appid=${API_KEY}`
       );
-      console.log("Geocoding API Response:", geoResponse.data);
 
       if (!geoResponse.data || !geoResponse.data.lat || !geoResponse.data.lon) {
         throw new Error("Invalid zip code or no location found.");
       }
 
-      const { lat, lon, name: city, country, state } = geoResponse.data;
+      const {
+        lat,
+        lon,
+        name: city,
+        country,
+        state,
+        zip: geoZip,
+      } = geoResponse.data;
+
+      console.log("Geocoding API Response:", geoResponse.data);
+      console.log(`Geocoding country: ${country}`);
 
       // Fetch the weather data using the lat/lon
       const weatherResponse = await axios.get(
         `${BASE_URL}?lat=${lat}&lon=${lon}&units=imperial&appid=${API_KEY}`
       );
 
+      console.log(`weatherResponse.data: ${weatherResponse.data}`);
+      console.log(`The returned zip, weatherSlice: ${geoZip}`);
+
       // Return both the weather data and the city information
-      return { weatherData: weatherResponse.data, city, country, state };
+      return {
+        weatherData: weatherResponse.data,
+        city,
+        country,
+        state,
+        zip: geoZip,
+      };
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -56,10 +75,10 @@ export const fetchWeatherByZip = createAsyncThunk(
 
 export const fetchWeatherByCity = createAsyncThunk(
   "weather/fetchWeatherByCity",
-  async ({ city, state }, { rejectWithValue }) => {
+  async ({ city, state, zip }, { rejectWithValue }) => {
     try {
       // Log the input for debugging
-      console.log(`Fetching weather for: ${city}, ${state}`);
+      console.log(`Fetching weather for: ${city}, ${state}, ${zip}`);
 
       // Construct the geocoding request URL with country code
       const geoUrl = `http://api.openweathermap.org/geo/1.0/direct?q=${city},${state},US&appid=${API_KEY}`;
@@ -79,7 +98,8 @@ export const fetchWeatherByCity = createAsyncThunk(
       const {
         name: geoCityName,
         state: geoState,
-        country,
+        country: geoCountry,
+        zip: geoZip,
       } = geoResponse.data[0];
 
       // Now fetch the weather data using the lat/lon
@@ -89,11 +109,14 @@ export const fetchWeatherByCity = createAsyncThunk(
       );
       console.log(geoCityName);
       console.log(geoState);
+      console.log(geoZip);
       return {
         weatherData: weatherResponse.data,
-        cityName: `${geoCityName}, ${geoState}`, // Include state in the return
+        cityName: `${geoCityName}, ${geoZip}, ${geoCountry}`, // Include state in the return
         geoCityName,
         geoState,
+        geoCountry,
+        geoZip,
       };
     } catch (error) {
       console.error("Error fetching weather by city:", error);
@@ -111,6 +134,9 @@ const weatherSlice = createSlice({
     cityName: "",
     geoCityName: "",
     geoState: "",
+    geoZip: "",
+    geoCountry: "",
+    country: "",
   },
   reducers: {
     setCityName: (state, action) => {
@@ -127,6 +153,7 @@ const weatherSlice = createSlice({
         state.data = action.payload.weatherData;
         state.error = "";
         state.cityName = action.payload.cityName;
+        console.log(`fetchWeather: ${state.cityName}`);
       })
       .addCase(fetchWeather.rejected, (state, action) => {
         state.loading = false;
@@ -143,6 +170,13 @@ const weatherSlice = createSlice({
         state.cityName = `${action.payload.city}, ${
           action.payload.state || ""
         } ${action.payload.country}`.trim();
+        state.geoCityName = action.payload.city;
+        state.geoState = action.payload.state;
+        state.geoZip = action.payload.zip;
+        state.country = action.payload.country;
+        state.geoData = action.payload.geoData;
+        console.log(`The geoCityName ? ${state.geoCityName}`);
+        console.log(`The geoState ? ${state.geoState}`);
       })
       .addCase(fetchWeatherByZip.rejected, (state, action) => {
         state.loading = false;

@@ -1,4 +1,3 @@
-// app/page.js
 "use client";
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -17,11 +16,10 @@ import {
 
 const Home = () => {
   const [city, setCity] = useState("");
+  const [cityName, setCityName] = useState("");
   const dispatch = useDispatch();
-  const { loading, data, error, cityName, geoCityName, geoState } = useSelector(
-    (state) => state.weather
-  );
-  console.log("Weather State:", { loading, data, error });
+  const { loading, data, error, geoCityName, geoState, geoZip, country } =
+    useSelector((state) => state.weather);
 
   const getUserLocation = async () => {
     try {
@@ -33,18 +31,11 @@ const Home = () => {
         userState ? userState + ", " : ""
       }${userCountry}`;
 
+      console.log(`IP API: ${fullCityName}`);
+      // dispatch(fetchWeather(fullCityName));
       dispatch(fetchWeather(userCity));
-      dispatch({ type: "weather/setCityName", payload: fullCityName });
 
-      // Fetch geocoding data to set local city and state
-      const geoResponse = await axios.get(
-        `http://api.openweathermap.org/geo/1.0/direct?q=${userCity},${userState},US&appid=${API_KEY}`
-      );
-      if (geoResponse.data.length > 0) {
-        const geoData = geoResponse.data[0];
-        setLocalCityName(geoData.name); // Set local city name
-        setLocalStateName(geoData.state); // Set local state name
-      }
+      dispatch({ type: "weather/setCityName", payload: fullCityName });
     } catch (error) {
       console.error("Error fetching user location", error);
     }
@@ -71,6 +62,8 @@ const Home = () => {
       console.error("Error fetching location from input", error);
     }
   };
+
+  console.log(`The returned zip, page: ${geoZip}`);
 
   const handleKeyPress = (event) => {
     if (event.key === "Enter") {
@@ -100,7 +93,7 @@ const Home = () => {
       {error && <p>Error: {error}</p>}
       <div>
         <h3>
-          Showing data for {geoCityName}, {geoState}
+          Showing data for {geoCityName}, {geoZip}, {country}
         </h3>
         <h3>Temperature</h3>
         <Sparklines
