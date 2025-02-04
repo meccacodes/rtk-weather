@@ -1,7 +1,11 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchWeather, fetchWeatherByZip } from "./store/slices/weatherSlice";
+import {
+  fetchWeather,
+  fetchWeatherByZip,
+  fetchWeatherByCity,
+} from "./store/slices/weatherSlice";
 import styles from "./page.module.css";
 import axios from "axios";
 import {
@@ -14,12 +18,8 @@ const Home = () => {
   const [city, setCity] = useState("");
   const [cityName, setCityName] = useState("");
   const dispatch = useDispatch();
-  const {
-    loading,
-    data,
-    error,
-    cityName: reduxCityName,
-  } = useSelector((state) => state.weather);
+  const { loading, data, error, geoCityName, geoState, geoZip, country } =
+    useSelector((state) => state.weather);
 
   const getUserLocation = async () => {
     try {
@@ -31,9 +31,11 @@ const Home = () => {
         userState ? userState + ", " : ""
       }${userCountry}`;
 
-      dispatch(fetchWeather(userCity));
+      dispatch(fetchWeather(fullCityName));
+      setCityName(fullCityName);
 
       dispatch({ type: "weather/setCityName", payload: fullCityName });
+      return fullCityName;
     } catch (error) {
       console.error("Error fetching user location", error);
     }
@@ -45,9 +47,20 @@ const Home = () => {
 
   const handleSearch = async () => {
     try {
-      dispatch(fetchWeatherByZip(city));
+      const formattedInput = city.trim();
+      const isZipCode = /^\d{5}(-\d{4})?$/.test(formattedInput);
+
+      if (isZipCode) {
+        dispatch(fetchWeatherByZip(formattedInput));
+      } else {
+        const [inputCity, inputState] = formattedInput
+          .split(",")
+          .map((part) => part.trim());
+        dispatch(fetchWeatherByCity({ city: inputCity, state: inputState }));
+        setCityName(formattedInput);
+      }
     } catch (error) {
-      console.error("Error fetching location from zip code", error);
+      console.error("Error fetching location from input", error);
     }
   };
 
@@ -70,6 +83,7 @@ const Home = () => {
         value={city}
         onChange={(e) => setCity(e.target.value)}
         onKeyDown={handleKeyPress}
+        placeholder="Enter a US zip code"
       />
       <button className={styles.searchBtn} onClick={handleSearch}>
         Search
@@ -77,9 +91,18 @@ const Home = () => {
       {loading && <p>Loading...</p>}
       {error && <p>Error: {error}</p>}
       <div>
-        <h3>Showing data for {reduxCityName}</h3>
+        <br></br>
+        <h3>
+          Showing data for{" "}
+          {geoCityName && geoZip
+            ? `${geoCityName}, ${geoZip}, ${country}`
+            : cityName}
+        </h3>
+        <br></br>
         <h3>Temperature</h3>
-        <Sparklines data={data.main ? data.main.temp : []}>
+        <Sparklines
+          data={data.list ? data.list.map((item) => item.main.temp) : []}
+        >
           <SparklinesLine color="blue" />
           <SparklinesReferenceLine type="mean" />
         </Sparklines>
