@@ -31,11 +31,11 @@ const Home = () => {
         userState ? userState + ", " : ""
       }${userCountry}`;
 
-      console.log(`IP API: ${fullCityName}`);
-      // dispatch(fetchWeather(fullCityName));
-      dispatch(fetchWeather(userCity));
+      dispatch(fetchWeather(fullCityName));
+      setCityName(fullCityName);
 
       dispatch({ type: "weather/setCityName", payload: fullCityName });
+      return fullCityName;
     } catch (error) {
       console.error("Error fetching user location", error);
     }
@@ -48,22 +48,21 @@ const Home = () => {
   const handleSearch = async () => {
     try {
       const formattedInput = city.trim();
-      const isZipCode = /^\d{5}(-\d{4})?$/.test(formattedInput); // Check if input is a zip code
+      const isZipCode = /^\d{5}(-\d{4})?$/.test(formattedInput);
 
       if (isZipCode) {
-        dispatch(fetchWeatherByZip(formattedInput)); // Fetch by zip code
+        dispatch(fetchWeatherByZip(formattedInput));
       } else {
         const [inputCity, inputState] = formattedInput
           .split(",")
           .map((part) => part.trim());
-        dispatch(fetchWeatherByCity({ city: inputCity, state: inputState })); // Pass city and state as an object
+        dispatch(fetchWeatherByCity({ city: inputCity, state: inputState }));
+        setCityName(formattedInput);
       }
     } catch (error) {
       console.error("Error fetching location from input", error);
     }
   };
-
-  console.log(`The returned zip, page: ${geoZip}`);
 
   const handleKeyPress = (event) => {
     if (event.key === "Enter") {
@@ -84,7 +83,7 @@ const Home = () => {
         value={city}
         onChange={(e) => setCity(e.target.value)}
         onKeyDown={handleKeyPress}
-        placeholder="Enter a city and state. ex:kingston, ny"
+        placeholder="Enter a US zip code"
       />
       <button className={styles.searchBtn} onClick={handleSearch}>
         Search
@@ -92,9 +91,14 @@ const Home = () => {
       {loading && <p>Loading...</p>}
       {error && <p>Error: {error}</p>}
       <div>
+        <br></br>
         <h3>
-          Showing data for {geoCityName}, {geoZip}, {country}
+          Showing data for{" "}
+          {geoCityName && geoZip
+            ? `${geoCityName}, ${geoZip}, ${country}`
+            : cityName}
         </h3>
+        <br></br>
         <h3>Temperature</h3>
         <Sparklines
           data={data.list ? data.list.map((item) => item.main.temp) : []}
