@@ -59,6 +59,8 @@ export const fetchWeatherByZip = createAsyncThunk(
         state,
         zip: geoZip,
       };
+
+      return { weatherData: weatherResponse.data, city: `${city}, ${country}` };
     } catch (error) {
       return rejectWithValue(error.message);
     }

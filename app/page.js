@@ -102,7 +102,8 @@ const Home = () => {
         <h3>Temperature</h3>
         <Sparklines
           data={data.list ? data.list.map((item) => item.main.temp) : []}
-        >
+        ></Sparklines>
+        <Sparklines data={getChartData("temp")}>
           <SparklinesLine color="blue" />
           <SparklinesReferenceLine type="mean" />
         </Sparklines>
